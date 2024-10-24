@@ -1,9 +1,42 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  useLoginMutation,
+  useRegisterMutation,
+} from "../feature/auth/userSlice";
 
 const Login = () => {
-  const [curentState, setCurrentState] = useState("Sign Up");
+  const [curentState, setCurrentState] = useState("Login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [login, { isLoading: loginLoading, error: loginError }] =
+    useLoginMutation();
+  const [register, { isLoading, error: registerError }] = useRegisterMutation();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (curentState === "Sign Up") {
+      try {
+        const res = await register({ name, email, password }).unwrap();
+        if (res) {
+          navigate("/");
+          dispatch(setCurrentState(res));
+        }
+      } catch (error) {}
+    } else {
+      try {
+        const res = await login({ email, password }).unwrap();
+        console.log(res);
+        if (res) {
+          navigate("/");
+          dispatch(setCurrentState(res));
+        }
+      } catch (error) {}
+    }
   };
   return (
     <form
@@ -20,6 +53,8 @@ const Login = () => {
           className="w-full px-3 py-2 border border-gray-800"
           name=""
           id=""
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           required
           placeholder="Name"
         />
@@ -29,6 +64,8 @@ const Login = () => {
         className="w-full px-3 py-2 border border-gray-800"
         name=""
         id=""
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         required
         placeholder="Email"
       />
@@ -37,6 +74,8 @@ const Login = () => {
         className="w-full px-3 py-2 border border-gray-800"
         name=""
         id=""
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         required
         placeholder="Password"
       />

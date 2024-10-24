@@ -1,60 +1,55 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
-import RelatedProducts from "../components/RelatedProducts";
-import { ShopContext } from "../context/ShopContext";
+import { useGetProductQuery } from "../feature/product/productSlice";
 
 const Product = () => {
   const { productId } = useParams();
 
-  const { products, currency, addToCart } = useContext(ShopContext);
+  const { data: product, isLoading, error } = useGetProductQuery(productId);
   const [productData, setProductData] = useState(false);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
 
-  const fetchProductData = async () => {
-    products.map((item) => {
-      if (item._id === productId) {
-        setProductData(item);
-
-        setImage(item.image[0]);
-        return null;
-      }
-    });
-  };
-
   useEffect(() => {
-    fetchProductData();
-    console.log(productData);
-  }, [productId, products]);
+    if (product) {
+      setImage(product.image[0].name);
+    }
+  }, [product]);
 
-  console.log(size);
+  console.log(product);
 
-  return productData ? (
+  return isLoading ? (
+    <h6>Loading...</h6>
+  ) : product ? (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
       <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
         {/* product image */}
         <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row ">
           <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full">
-            {productData.image.map((item, index) => (
+            {product.image.map((item, index) => (
               <img
-                src={item}
+                src={`http://localhost:5000${item.name}`}
                 key={index}
-                onClick={() => setImage(item)}
+                onClick={() => setImage(item.name)}
                 className="w-[24%] sm:w-full sm:mb-3 flex-srink-0 cursor-pointer "
                 alt=""
               />
             ))}
           </div>
           <div className="w-full sm:w-[80%]">
-            <img src={image} className="w-full h-auto" alt="" />
+            <img
+              src={`http://localhost:5000${image}`}
+              className="w-full h-auto"
+              alt=""
+            />
           </div>
         </div>
 
         {/* Product Info */}
 
         <div className="flex-1">
-          <h1 className="font-medium text-2xl mt-2">{productData.name}</h1>
+          <h1 className="font-medium text-2xl mt-2">{product.name}</h1>
           <div className="flex items-center gap-1 mt-2">
             <img src={assets.star_icon} alt="" className="w-3.5" />
             <img src={assets.star_icon} alt="" className="w-3.5" />
@@ -64,30 +59,55 @@ const Product = () => {
             <p className="pl-2">(122)</p>
           </div>
           <p className="mt-5 text-3xl font-medium">
-            {currency}
-            {productData.price}
+            {/* {currency} */}
+            {product.price}
           </p>
-          <p className="mt-5 text-gray-500 md:w-4/5">
-            {productData.description}
-          </p>
+          <p className="mt-5 text-gray-500 md:w-4/5">{product.description}</p>
 
           <div className="flex flex-col gap-4 my-8">
-            <p>Select Size</p>
+            {product.size && (
+              <>
+                <p>Select Size</p>
+                <div className="flex gap-2">
+                  {product.sizes.map((item, index) => (
+                    <button
+                      onClick={() => setSize(item.sizeName)}
+                      key={index}
+                      className={`border py-2 px-4 bg-gray-300 ${
+                        item.sizeName === size ? "border-orange-500" : ""
+                      }`}
+                    >
+                      {item.sizeName}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <p>Status</p>
             <div className="flex gap-2">
-              {productData.sizes.map((item, index) => (
-                <button
-                  onClick={() => setSize(item)}
-                  key={index}
-                  className={`border py-2 px-4 bg-gray-300 ${
-                    item === size ? "border-orange-500" : ""
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
+              <strong>
+                {product.countInStock > 0 ? "In Stoke" : "Out of Stock"}
+              </strong>
+            </div>
+            <p>Quantity</p>
+            <div className="flex gap-2">
+              {product.countInStock > 0 && (
+                <select className="w-20 text-center">
+                  {[
+                    ...Array(product.countInStock)
+                      .keys()
+                      .map((x) => (
+                        <option key={x + 1} value={x + 1}>
+                          {x + 1}
+                        </option>
+                      )),
+                  ]}
+                </select>
+              )}
             </div>
             <button
-              onClick={() => addToCart(productData._id, size)}
+              onClick={() => addToCart()}
               className="bg-black text-white px-8 py-3 text-sm active:bg-gray-700"
             >
               ADD TO CART
@@ -128,10 +148,10 @@ const Product = () => {
 
       {/* Display latest product */}
 
-      <RelatedProducts
+      {/* <RelatedProducts
         category={productData.category}
         subCategory={productData.subCategory}
-      />
+      /> */}
     </div>
   ) : (
     <div className="opacity-0"></div>
